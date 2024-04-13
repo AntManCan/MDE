@@ -11,8 +11,15 @@ call insert_contract(124, "2022-01-01", "2026-01-01", 1200, 3);
 
 call insert_receipt(1);
 
-call insert_device_info('M809', 'fridge', 'utility', 5);
-call install_device(123, 'M809', "2024-01-01");
+-- `install_device` (IN idInstallation_in INT, IN inst_date_in DATE, IN manRef_in VARCHAR(125), IN model_in VARCHAR(45), IN type_in VARCHAR(45))
+call install_device(123, "2024-01-01", 'M809', 'sensor luz', 'luminosidade');
+call install_device(123, "2024-01-01", 'F710', 'Lamps', 'actuator');
+
+-- `insert_automation` (IN name_in VARCHAR(125), IN con_in VARCHAR(45), IN check_value_in DECIMAL(7,2), 
+-- IN action_in VARCHAR(45), IN device_info_manufacturer_ref_in VARCHAR(125), IN device_info_instalations_idInstalations_in INT, IN device_info_manufacturer_ref1_in VARCHAR(125))
+call install_automation("Luminosity", '>', 75, 'ON','M809', 123, 'F710');
+
+
 
 
 
