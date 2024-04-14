@@ -15,9 +15,21 @@ call insert_receipt(1);
 call install_device(123, "2024-01-01", 'M809', 'sensor luz', 'luminosidade');
 call install_device(123, "2024-01-01", 'F710', 'Lamps', 'actuator');
 
--- `insert_automation` (IN name_in VARCHAR(125), IN con_in VARCHAR(45), IN check_value_in DECIMAL(7,2), 
--- IN action_in VARCHAR(45), IN device_info_manufacturer_ref_in VARCHAR(125), IN device_info_instalations_idInstalations_in INT, IN device_info_manufacturer_ref1_in VARCHAR(125))
-call install_automation("Luminosity", '>', 75, 'ON','M809', 123, 'F710');
+-- `insert_automation` (IN device_info_instalations_idInstalations_in INT, IN name_in VARCHAR(125), IN device_info_manufacturer_ref_in VARCHAR(125), IN con_in VARCHAR(45), IN check_value_in DECIMAL(7,2), IN device_info_manufacturer_ref1_in VARCHAR(125), IN action_in VARCHAR(45))
+call insert_automation(123, "Day-mode",'M809', '<', 75, 'F710', 'ON');
+call insert_automation(123, "Night-mode",'M809', '>', 150, 'F710', 'OFF');
+
+UPDATE device_info
+SET value=70
+WHERE manufacturer_ref='M809' AND instalations_idInstalations=123;
+
+UPDATE device_info
+SET value=160
+WHERE manufacturer_ref='M809' AND instalations_idInstalations=123;
+
+
+
+
 
 
 
