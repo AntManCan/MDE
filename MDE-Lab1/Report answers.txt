@@ -1,0 +1,6 @@
+RF1: Implementar as operações CRUD5 da BD em termos das entidades identificadas
+para a base-de-dados obtida.
+R: Todas as operações CRUD de cada entidade foram implementadas em procedures para facilitar interação com o cliente.
+
+RF2: Proceder ao registo dos valores provenientes dos dispositivos/equipamentos. 
+Este registo é feito com as Procedures.
