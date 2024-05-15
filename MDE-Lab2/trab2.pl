@@ -1,3 +1,20 @@
+
+min([X],X).
+min([E|R],E):-
+    min(R,M),
+    E=<M.
+min([E|R],M):-
+    min(R,M),
+    E>M.
+
+max([X],X).
+max([E|R],E):-
+    max(R,M),
+    E>=M.
+max([E|R],M):-
+    max(R,M),
+    E>M.
+
 % potencia_contratada:monofasico 6.9, 10.35, 13.80; trifasico13.80,20.7
 tipo_pot('monofasico', 6.9).
 tipo_pot('monofasico', 10.35).
@@ -25,7 +42,8 @@ condutor_eletrico('rigido', 'cobre', 'pvc').
 ligacao('instA', 'instB', condutor_eletrico('rigido', 'cobre', 'pvc'), 300, 10).
 
 % ligação bidirecional
-bid_l(X, Y) :- ligacao(X, Y, _, _, _) ; ligacao(Y, X, _, _, _).
+bid_l(X, Y) :- ligacao(X, Y, _, _, _).
+bid_l(X, Y) :- ligacao(Y, X, _, _, _).
 
 % addInst(nome instalacao, tipo potencia contratada, potencia).
 :- dynamic instalacao/2.
@@ -70,7 +88,8 @@ addLigacao(InstX, InstY, Ctipo, Cmat, Ciso, L, P) :-
 % removeLigacao(instX, instY).
 removeLigacao(X, Y) :-
     bid_l(X,Y),
-    retract(ligacao(Y, X, _,_,_)),
+    retract(ligacao(Y, X, _,_,_)).
+removeLigacao(X, Y) :-
     retract(ligacao(X, Y, _,_,_)).
 
 % addDispositivoInst(inst, dispositivo).
@@ -100,9 +119,51 @@ removeDispositivoInst(Inst, Dname) :-
     retract(inst_pot_total(Inst, _)),
     assert(inst_pot_total(Inst, S)).
 
-
 % addDispositivo(disp name, consumo valor).
 :- dynamic dispositivo/2.
 addDispositivo(Dname, Cvalue) :-
     not(dispositivo(Dname, _)),
     assert(dispositivo(Dname, Cvalue)).
+
+% listDispositivoInst(inst name, list L).
+listDispositivoInst(Inst, L) :-
+    instLDispositivo(Inst,L).
+
+
+% RF6 - Listar consumo por dispositivo de instalação
+containInstLD(D, C, I) :-
+    dispositivo(D, C),
+    instLDispositivo(I, LD),
+    member(D, LD).
+
+listConsumoDInst(Inst, LC) :-
+    findall((D,C),containInstLD(D,C,Inst), LC ).
+
+% RF8 - Listar instalações com dispositivos de um determinado tipo.
+containDisp(I, D) :-
+    instLDispositivo(I, LD),
+    member(D, LD).
+
+listInstDType(D, LI) :-
+    findall(I, containDisp(I, D), LI).
+
+% RF9 - Listar instalação que mais consome na rede.
+instMaiorConsumo(I) :-
+    findall(C, inst_pot_total(_, C), LC),
+    max_list(LC, CM),
+    inst_pot_total(I, CM).
+
+% RF10 - Obter itinerário elétrico entre duas instalações.
+addcond(PP, arc(X,Y), TP) :-
+    not(member(arc(Y,X),PP)),
+    append(PP,[arc(X,Y)],TP).
+
+step(X,Y,PP,TP) :-
+    bid_l(X,Y),!,
+    addcond(PP,arc(X,Y),TP).
+step(X,Y,PP,TP) :-
+    bid_l(X,Z),
+    addcond(PP, arc(X,Z),Pi),
+    step(Z,Y,Pi,TP).
+
+bipath(X,Y,TP) :- step(X,Y,[],TP).
