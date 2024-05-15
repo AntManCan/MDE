@@ -42,8 +42,8 @@ condutor_eletrico('rigido', 'cobre', 'pvc').
 ligacao('instA', 'instB', condutor_eletrico('rigido', 'cobre', 'pvc'), 300, 10).
 
 % ligação bidirecional
-bid_l(X, Y) :- ligacao(X, Y, _, _, _).
-bid_l(X, Y) :- ligacao(Y, X, _, _, _).
+bid_l(X, Y,L) :- ligacao(X, Y, _, _, L).
+bid_l(X, Y,L) :- ligacao(Y, X, _, _, L).
 
 % addInst(nome instalacao, tipo potencia contratada, potencia).
 :- dynamic instalacao/2.
@@ -81,13 +81,13 @@ addCondutor(T, M, I) :-
 % condutor, isolamento condutor, comprimento, perdas percentagem).
 :- dynamic ligacao/5.
 addLigacao(InstX, InstY, Ctipo, Cmat, Ciso, L, P) :-
-    (   not(bid_l(InstX, InstY)) ->
+    (   not(bid_l(InstX, InstY,_)) ->
     (addCondutor(Ctipo,Cmat,Ciso);
     assert(ligacao(InstX, InstY, condutor_eletrico(Ctipo, Cmat, Ciso), L, P)))).
 
 % removeLigacao(instX, instY).
 removeLigacao(X, Y) :-
-    bid_l(X,Y),
+    bid_l(X,Y,_),
     retract(ligacao(Y, X, _,_,_)).
 removeLigacao(X, Y) :-
     retract(ligacao(X, Y, _,_,_)).
@@ -154,16 +154,16 @@ instMaiorConsumo(I) :-
     inst_pot_total(I, CM).
 
 % RF10 - Obter itinerário elétrico entre duas instalações.
-addcond(PP, arc(X,Y), TP) :-
-    not(member(arc(Y,X),PP)),
-    append(PP,[arc(X,Y)],TP).
+addcond(PP, arc(X,Y,_), TP) :-
+    not(member(arc(Y,X,_),PP)),
+    append(PP,[arc(X,Y,_)],TP).
 
 step(X,Y,PP,TP) :-
-    bid_l(X,Y),
-    addcond(PP,arc(X,Y),TP).
+    bid_l(X,Y,L1),!,
+    addcond(PP,arc(X,Y,L1),TP).
 step(X,Y,PP,TP) :-
-    bid_l(X,Z),
-    addcond(PP, arc(X,Z),Pi),
+    bid_l(X,Z,L1),
+    addcond(PP, arc(X,Z,L1),Pi),
     step(Z,Y,Pi,TP).
 
-bipath(X,Y,TP) :- step(X,Y,[],TP).
+bipath(X,Y,p(TP)) :- step(X,Y,[],TP).
