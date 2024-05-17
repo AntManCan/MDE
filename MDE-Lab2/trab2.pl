@@ -1,19 +1,4 @@
 
-min([X],X).
-min([E|R],E):-
-    min(R,M),
-    E=<M.
-min([E|R],M):-
-    min(R,M),
-    E>M.
-
-max([X],X).
-max([E|R],E):-
-    max(R,M),
-    E>=M.
-max([E|R],M):-
-    max(R,M),
-    E>M.
 
 % potencia_contratada:monofasico 6.9, 10.35, 13.80; trifasico13.80,20.7
 tipo_pot('monofasico', 6.9).
@@ -70,6 +55,10 @@ removeInst(Inst) :-
     retract(instLDispositivo(Inst, _)),
     retract(instalacao(Inst, _)),
     true.
+
+alteraInstPtipo(Inst, Ptipo) :-
+    retract(instalacao(Inst, tipo_pot(_, Pnum))),
+    assert(instalacao(Inst, tipo_pot(Ptipo, Pnum))).
 
 % addCondutor(tipo, material, isolamento).
 :- dynamic condutor_eletrico/3.
@@ -158,12 +147,41 @@ addcond(PP, arc(X,Y,L), TP) :-
     not(member(arc(Y,X,_),PP)),
     append(PP,[arc(X,Y,L)],TP).
 
-step(X,Y,PP,TP) :-
-    bid_l(X,Y,L1),!,
-    addcond(PP,arc(X,Y,L1),TP).
-step(X,Y,PP,TP) :-
+step(X,Y,PP,TP,L) :-
+    bid_l(X,Y,L),!,
+    addcond(PP,arc(X,Y,L),TP).
+step(X,Y,PP,TP,L) :-
     bid_l(X,Z,L1),
     addcond(PP, arc(X,Z,L1),Pi),
-    step(Z,Y,Pi,TP).
+    step(Z,Y,Pi,TP,L2),
+    L is L1+L2.
+bipath(X,Y,p(TP,TL)) :- step(X,Y,[],TP,TL).
 
-bipath(X,Y,p(TP)) :- step(X,Y,[],TP).
+% RF11 - Obter itinerário elétrico entre duas instalações com passagem
+% por uma ins%talação trifásica.
+listContainsTE(L,TE) :-
+    (   member(arc(_:TE,_:_),L);member(arc(_:_,_:TE),L)).
+
+addcond_tri(PP, arc(X:E1,Y:E2), TP) :-
+    not(member(arc(Y:_,X:_),PP)),
+    append(PP,[arc(X:E1,Y:E2)],TP).
+
+step_tri(X,Y,PP,TP,TE) :-
+    bid_l(X,Y,_),
+    instalacao(X, tipo_pot(E1, _)),
+    instalacao(Y, tipo_pot(E2, _)),
+    addcond_tri(PP,arc(X:E1,Y:E2),TP),!,
+    listContainsTE(TP,TE).
+step_tri(X,Y,PP,TP,TE) :-
+    bid_l(X,Z,_),
+    instalacao(X, tipo_pot(E1, _)),
+    instalacao(Z, tipo_pot(E2, _)),
+    addcond_tri(PP,arc(X:E1,Z:E2),Pi),
+    step_tri(Z,Y,Pi,TP,TE).
+% TE - Tipo Potência
+bipath_tri(X,Y,p(TP),TE) :- step_tri(X,Y,[],TP,TE).
+
+
+% RF12 - Obter itinerário elétrico entre duas instalações cujo total de
+% perdas sej%a inferior a 8%.
+
