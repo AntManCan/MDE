@@ -160,7 +160,7 @@ bipath(X,Y,p(TP,TL)) :- step(X,Y,[],TP,TL).
 % RF11 - Obter itinerário elétrico entre duas instalações com passagem
 % por uma ins%talação trifásica.
 listContainsTE(L,TE) :-
-    member(arc(_:TE,_:_),L),!.
+    member(arc(_:TE,_:_),L).
 listContainsTE(L,TE) :-
     member(arc(_:_,_:TE),L).
 
@@ -171,8 +171,8 @@ addcond_tri(PP, arc(X:E1,Y:E2), TP) :-
 step_tri(X,Y,PP,TP,TE) :-
     bid_l(X,Y,_),
     instalacao(X, tipo_pot(E1, _)),
-    instalacao(Y, tipo_pot(E2, _)),
-    addcond_tri(PP,arc(X:E1,Y:E2),TP),!,
+    instalacao(Y, tipo_pot(E2, _)),!,
+    addcond_tri(PP,arc(X:E1,Y:E2),TP),
     listContainsTE(TP,TE).
 step_tri(X,Y,PP,TP,TE) :-
     bid_l(X,Z,_),
@@ -186,4 +186,20 @@ bipath_tri(X,Y,p(TP),TE) :- step_tri(X,Y,[],TP,TE).
 
 % RF12 - Obter itinerário elétrico entre duas instalações cujo total de
 % perdas sej%a inferior a 8%.
+addcond(PP, arc(X,Y,L), TP) :-
+    not(member(arc(Y,X,_),PP)),
+    append(PP,[arc(X,Y,L)],TP).
+
+step_l(X,Y,PP,TP,L,LL) :-
+    bid_l(X,Y,L),!,
+    addcond(PP,arc(X,Y,L),TP),
+    L =< LL.
+step_l(X,Y,PP,TP,L,LL) :-
+    bid_l(X,Z,L1),
+    addcond(PP, arc(X,Z,L1),Pi),
+    step(Z,Y,Pi,TP,L2),
+    L is L1+L2,
+    L =< LL.
+% LL - Limit losses
+bipath_l(X,Y,p(TP,TL),LL) :- step_l(X,Y,[],TP,TL,LL).
 
