@@ -282,12 +282,15 @@ mainreadoption(Op):- nl, write('Invalid Option!'), nl,  mainreadoption(Op).
 
 mainvalid(Op):- Op >= 1, Op=<7.
 
-mainexecute(5).
+mainexecute(7).
 mainexecute(Op):- mainexec(Op), nl, mainmenu(NOp), mainexecute(NOp).
 
 mainexec(1):-instmenu(IOp), instexecute(IOp).
-mainexec(2):-write('2nd option successful').
-mainexec(3):-write('3rd option successful').
+mainexec(2):-devicemenu(IOp), deviceexecute(IOp).
+mainexec(3):-connectmenu(IOp), connectexecute(IOp).
+mainexec(4):-powermenu(IOp), powerexecute(IOp).
+mainexec(5):-
+mainexec(6):-
 
 % Installation Menu
 instmenu(IOp):-write('====[ Installation Menu ]===='),nl,
@@ -317,3 +320,63 @@ instexec(1):-write('Installation Name?'),nl,
              write('Installation added successfully!').
 instexec(2):-
 instexec(3):-
+
+% Device Menu
+devicemenu(DOp):-   write('====[ Device Menu ]===='),nl,
+                    write('    1. Add a device.'),nl,
+                    write('    2. Remove a device.'),nl,
+                    write('    3. Edit a device.'),nl,
+                    write('    4. Go back.'),nl,
+                    write('======================='),nl, devicereadoption(DOp).
+                    
+devicereadoption(DOp):- read(DOp), devicevalid(DOp), nl.
+devicereadoption(DOp):- nl, write('Invalid Device Option!'), nl,  devicereadoption(Op).
+
+devicevalid(DOp):- DOp >= 1, DOp=<4.
+
+deviceexecute(4).
+deviceexecute(DOp):- deviceexec(DOp), nl, devicemenu(DOp), deviceexecute(DOp).
+
+deviceexec(1):-
+deviceexec(2):-
+deviceexec(3):-
+
+% Connection Menu
+connectmenu(COp):-  write('====[ Connection Menu ]===='),nl,
+                    write('    1. Add a Connection.'),nl,
+                    write('    2. Remove a Connection.'),nl,
+                    write('    3. Edit a Connection.'),nl,
+                    write('    4. Go back.'),nl,
+                    write('==========================='),nl, connectreadoption(COp).
+                    
+connectreadoption(COp):- read(COp), connectvalid(COp), nl.
+connectreadoption(COp):- nl, write('Invalid Connection Option!'), nl,  connectreadoption(Op).
+
+connectvalid(COp):- COp >= 1, COp=<4.
+
+connectexecute(4).
+connectexecute(COp):- connectexec(COp), nl, connectmenu(COp), connectexecute(COp).
+
+connectexec(1):-
+connectexec(2):-
+connectexec(3):-
+
+% Power Menu
+powermenu(POp):-  write('====[ Power Menu ]===='),nl,
+                    write('    1. Add Power to a device.'),nl,
+                    write('    2. Remove a Power.'),nl,
+                    write('    3. Edit a Power.'),nl,
+                    write('    4. Go back.'),nl,
+                    write('========================'),nl, powerreadoption(POp).
+                    
+powerreadoption(POp):- read(POp), powervalid(POp), nl.
+powerreadoption(POp):- nl, write('Invalid Power Option!'), nl,  powerreadoption(Op).
+
+powervalid(POp):- POp >= 1, POp=<4.
+
+powerexecute(4).
+powerexecute(POp):- powerexec(POp), nl, powermenu(POp), powerexecute(POp).
+
+powerexec(1):-
+powerexec(2):-
+powerexec(3):-
