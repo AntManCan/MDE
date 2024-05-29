@@ -9,7 +9,16 @@
 
 load_mqtt_library:-
    not(mqtt_library_loaded),
-   % loads the library mqtt_prolog.dll% potencia_contratada:monofasico 6.9, 10.35, 13.80; trifasico13.80,20.7
+   % loads the library mqtt_prolog.dll
+installation_monitoring_on_message_arrived('shellies/shellyplug-16A631/relay/0/power', Message,_Handler):-
+   format('mqtt topic: ~w~n',['shellies/shellyplug-16A631/relay/0/power']),
+   format('mqtt message in trab: ~w~n~n',[Message]).
+
+
+% create the other topics on_message_arrived
+
+
+% potencia_contratada:monofasico 6.9, 10.35, 13.80; trifasico13.80,20.7
 tipo_pot('monofasico', 6.9).
 tipo_pot('monofasico', 10.35).
 tipo_pot('monofasico', 13.80).

@@ -33,7 +33,7 @@ public class HttpMaven {
         System.out.println("Received String: " + stringHello);
         System.out.println("-------------------------------------\n");
         
-        
+        /*
         //Call service numbers
         System.out.println("NUMBERS SERVICE");
         OkHttpClient clientNumbers = new OkHttpClient().newBuilder()
@@ -110,6 +110,7 @@ public class HttpMaven {
         System.out.print("Array within the list of Facts: "); FactsList.printFactsList(myArray);
         System.out.print("First position of the list: "); FactsList.printStudents(myArray.get(0)); System.out.println();
         System.out.print("Second position of the list: "); FactsList.printStudents(myArray.get(1)); System.out.println();
-        System.out.println("-------------------------------------\n");              
+        System.out.println("-------------------------------------\n");    
+        */          
     }
 }
