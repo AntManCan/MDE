@@ -38,7 +38,8 @@ installation_monitoring_on_connect_success(Handler):-
 
 installation_monitoring_on_message_arrived('shellies/shellyplug-16A631/relay/0/power', Message,_Handler):-
    atom_number(Message,C),
-   alteraDispositivo('16A631',_,C).
+   dispositivo('16A631',Dname,_),
+   alteraDispositivo('16A631',Dname,C).
    %listInstDType('16A631', [Inst|_]),
    %listConsumoDInst(Inst, LC),
    %format('mqtt topic: ~w~n',['shellies/shellyplug-16A631/relay/0/power']),
@@ -46,7 +47,8 @@ installation_monitoring_on_message_arrived('shellies/shellyplug-16A631/relay/0/p
 
 installation_monitoring_on_message_arrived('shellies/shellyplug-16A632/relay/1/power', Message,_Handler):-
    atom_number(Message,C),
-   alteraDispositivo('16A632',_,C).
+   dispositivo('16A632',Dname,_),
+   alteraDispositivo('16A632',Dname,C).
    %listInstDType('16A632', [Inst|_]),
    %listConsumoDInst(Inst, LC),
    %format('mqtt topic: ~w~n',['shellies/shellyplug-16A632/relay/0/power']),
@@ -187,17 +189,25 @@ alteraLigacaoCiso(X, Y, Ci) :-
     (   addCondutor(Ct,Cmat,Ci),
     assert(ligacao(Y,X,condutor_eletrico(Ct, Cmat, Ci),L,P))).
 
+alteraLigacao(X,Y,NewY,L,P,Ct,Cm,Ci) :-
+    (   retract(ligacao(X,Y,condutor_eletrico(_, _, _),_,_))) ->
+    (   addCondutor(Ct,Cmat,Ci),
+    assert(ligacao(X,NewY,condutor_eletrico(Ct, Cm, Ci),L,P)));
+    (   retract(ligacao(Y,X,condutor_eletrico(_, _, _),_,_))) ->
+    (   addCondutor(Ct,Cmat,Ci),
+    assert(ligacao(NewY,X,condutor_eletrico(Ct, Cm, Ci),L,P))).
+
 % addDispositivoInst(inst, dispositivo).
 addDispositivoInst(Ref,Inst, Dname) :-
     instalacao(Inst, _),
-    dispositivo(Ref,Dname, Dnum),
+    addDispositivo(Ref,Dname, 0),
     instLDispositivo(Inst, L),
     not(member(Ref, L)),
     append([Ref], L, L1),
     retract(instLDispositivo(Inst,_)),
     assert(instLDispositivo(Inst,L1)),
     inst_pot_total(Inst, S1),
-    S is S1+Dnum,
+    S is S1,
     retract(inst_pot_total(Inst, _)),
     assert(inst_pot_total(Inst, S)).
 
@@ -217,8 +227,9 @@ removeDispositivoInst(Ref,Inst, Dname) :-
 % addDispositivo(disp name, consumo valor).
 :- dynamic dispositivo/3.
 addDispositivo(Ref,Dname, Cvalue) :-
-    not(dispositivo(Ref,Dname, _)),
-    assert(dispositivo(Ref,Dname, Cvalue)).
+    (   not(dispositivo(Ref,Dname, _))) ->
+    assert(dispositivo(Ref,Dname, Cvalue));
+    true.
 
 % removeDispositivo(disp name).
 removeDispositivo(Ref) :-
@@ -234,7 +245,7 @@ addDtoListInst(Ref,Dname,[H|R]) :-
     addDtoListInst(Ref,Dname,R).
 
 alteraDispositivo(Ref,Dname, Pnum) :-
-    dispositivo(Ref,Dname,_),
+    dispositivo(Ref,_,_),
     listInstDType(Ref, Linst),
     removeDispositivo(Ref),
     addDispositivo(Ref,Dname,Pnum),
@@ -391,12 +402,22 @@ instexec(2):-write('Installation Name?'),nl,
    write('Installation removed successfully!').
 instexec(2):-w_error(1).
 
+instexec(3):-write('Installation Name?'),nl,
+   read(InstName),
+   write('New Power type?'),nl,
+   read(PowerType),
+   %Validate Power Type
+   write('New Power value?'),nl,
+   read(Power),
+   write('Power read.'),nl,
+   alteraInstP(InstName,Power,PowerType),
+   write('Installation modified successfully!').
+instexec(3):-w_error(1).
 
-%instexec(3):-
 
 % Device Menu
 devicemenu(DOp):-   write('====[ Device Menu ]===='),nl,
-                    write('    1. Add a device.'),nl,
+                    write('    1. Add a device to an installation.'),nl,
                     write('    2. Remove a device.'),nl,
                     write('    3. Edit a device.'),nl,
                     write('    4. Go back.'),nl,
@@ -408,11 +429,31 @@ devicereadoption(DOp):- nl, write('Invalid Device Option!'), nl,  devicereadopti
 devicevalid(DOp):- DOp >= 1, DOp=<4.
 
 deviceexecute(4).
-deviceexecute(DOp):- deviceexec(DOp), nl, devicemenu(DOp), deviceexecute(DOp).
+deviceexecute(DOp):- deviceexec(DOp), nl, mainexec(2).
 
-deviceexec(1):-
-deviceexec(2):-
-deviceexec(3):-
+deviceexec(1):-write('Device Name?'),nl,
+             read(DName),
+             write('Device Ref?'),nl,
+             read(DRef),
+             write('Installation Name?'),nl,
+             read(IName),
+             addDispositivoInst(DRef, IName,DName),
+             write('Device added successfully!').
+deviceexec(1):-w_error(1).
+
+deviceexec(2):-write('Device Ref?'),nl,
+   read(DRef),
+   removeDispositivo(DRef),
+   write('Device removed successfully!').
+deviceexec(2):-w_error(1).
+
+deviceexec(3):-write('Device Ref?'),nl,
+   read(DRef),
+   write('New Device Name? (write the same if no change)'),nl,
+   read(NewDName),
+   alteraDispositivo(DRef,NewDName, 0),
+   write('Device modified successfully!').
+deviceexec(3):-w_error(1).
 
 % Connection Menu
 connectmenu(COp):-  write('====[ Connection Menu ]===='),nl,
@@ -428,11 +469,54 @@ connectreadoption(COp):- nl, write('Invalid Connection Option!'), nl,  connectre
 connectvalid(COp):- COp >= 1, COp=<4.
 
 connectexecute(4).
-connectexecute(COp):- connectexec(COp), nl, connectmenu(COp), connectexecute(COp).
+connectexecute(COp):- connectexec(COp), nl, mainexec(3).
 
-connectexec(1):-
-connectexec(2):-
-connectexec(3):-
+connectexec(1):-write('Source Installation name?'),nl,
+             read(InstX),
+             write('End Installation name?'),nl,
+             read(InstY),
+             write('Connection Type?'),nl,
+             read(Ctipo),
+             write('Connection Material?'),nl,
+             read(Cmat),
+             write('Connection Isolation?'),nl,
+             read(Ciso),
+             write('Connection Length?'),nl,
+             read(L),
+             write('Connection Power Loss?'),nl,
+             read(P),
+             addLigacao(InstX, InstY, Ctipo, Cmat, Ciso, L, P),
+             write('Connection added successfully!').
+connectexec(1):-w_error(1).
+
+connectexec(2):-write('Source Installation name?'),nl,
+   read(InstX),
+   write('End Installation name?'),nl,
+   read(InstY),
+   removeLigacao(InstX, InstY),
+   write('Connection removed successfully!').
+connectexec(2):-w_error(1).
+
+connectexec(3):-write('Source Installation name?'),nl,
+   read(InstX),
+   write('End Installation name?'),nl,
+   read(InstY),
+   write('New End Installation name? (write the same if no change)'),nl,
+   read(NewY),
+   write('New Connection Length? (write the same if no change)'),nl,
+   read(L),
+   write('New Connection Power Loss? (write the same if no change)'),nl,
+   read(P),
+   write('New Connection Type? (write the same if no change)'),nl,
+   read(Ct),
+   write('New Connection Material? (write the same if no change)'),nl,
+   read(Cm),
+   write('New Connection Isolation? (write the same if no change)'),nl,
+   read(Ci),
+   alteraLigacao(InstX,InstY,NewY,L,P,Ct,Cm,Ci),
+   write('Connection modified successfully!').
+connectexec(3):-w_error(1).
+
 
 % Power Menu
 powermenu(POp):-  write('====[ Power Menu ]===='),nl,
@@ -450,6 +534,6 @@ powervalid(POp):- POp >= 1, POp=<4.
 powerexecute(4).
 powerexecute(POp):- powerexec(POp), nl, powermenu(POp), powerexecute(POp).
 
-powerexec(1):-
-powerexec(2):-
-powerexec(3):-
+%powerexec(1):-
+%powerexec(2):-
+%powerexec(3):-
