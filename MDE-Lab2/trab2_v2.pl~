@@ -44,7 +44,7 @@ installation_monitoring_on_message_arrived('shellies/shellyplug-16A631/relay/0/p
    %format('mqtt topic: ~w~n',['shellies/shellyplug-16A631/relay/0/power']),
    %format('Inst DList: ~w~n~n',LC).
 
-installation_monitoring_on_message_arrived('shellies/shellyplug-16A632/relay/0/power', Message,_Handler):-
+installation_monitoring_on_message_arrived('shellies/shellyplug-16A632/relay/1/power', Message,_Handler):-
    atom_number(Message,C),
    alteraDispositivo('16A632',_,C).
    %listInstDType('16A632', [Inst|_]),
@@ -324,6 +324,11 @@ step_l(X,Y,PP,TP,L,LL) :-
 % LL - Limit losses
 bipath_l(X,Y,p(TP,TL),LL) :- step_l(X,Y,[],TP,TL,LL).
 
+
+% Error Messages
+w_error(1):-
+   write('Error! Operation failed.').
+
 % Main Menu
 trab2:- nl,nl,mainmenu(Op), mainexecute(Op).
 
@@ -353,20 +358,20 @@ mainexec(4):-powermenu(IOp), powerexecute(IOp).
 %mainexec(6):-
 
 % Installation Menu
-instmenu(IOp):- write('====[ Installation Menu ]===='),nl,
+instmenu(IMOp):- write('====[ Installation Menu ]===='),nl,
                write('    1. Add installations.'),nl,
                write('    2. Remove installations.'),nl,
                write('    3. Edit installations.'),nl,
                write('    4. Go back.'),nl,
-               write('============================='),nl, instreadoption(IOp).
+               write('============================='),nl, instreadoption(IMOp).
 
 instreadoption(IOp):- read(IOp), instvalid(IOp), nl.
-instreadoption(IOp):- nl, write('Invalid Inst Option!'), nl,  instreadoption(IOp).
+instreadoption(IOp):- nl, write('Invalid Inst Option!'), nl, instreadoption(IOp) .
 
-instvalid(IOp):- IOp >= 1, IOp=<4.
+instvalid(VOp):- VOp >= 1, VOp=<4.
 
 instexecute(4).
-instexecute(IOp):- instexec(IOp), nl, instmenu(IOp), instexecute(IOp).
+instexecute(IOp):- instexec(IOp), nl, instmenu(Op).
 
 instexec(1):-write('Installation Name?'),nl,
              read(InstName),
@@ -378,7 +383,15 @@ instexec(1):-write('Installation Name?'),nl,
              write('Power read.'),nl,
              addInst(InstName, PowerType,Power),
              write('Installation added successfully!').
-%instexec(2):-
+instexec(1):-w_error(1).
+
+instexec(2):-write('Installation Name?'),nl,
+   read(InstName),
+   removeInst(InstName),
+   write('Installation removed successfully!').
+instexec(2):-w_error(1).
+
+
 %instexec(3):-
 
 % Device Menu
