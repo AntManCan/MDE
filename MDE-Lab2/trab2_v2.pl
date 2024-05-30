@@ -1,3 +1,4 @@
+
 %Defining the MQTT broker details
  mqtt_broker('tcp://localhost:1883').     % case working locally
 %mqtt_broker('tcp://192.168.250.201:1883'). % case working with lab1.3
@@ -6,10 +7,57 @@
 :-dynamic mqtt_library_loaded/0.
 :-dynamic mqtt_monitoring_handler/1.
 
-
 load_mqtt_library:-
    not(mqtt_library_loaded),
-   % loads the library mqtt_prolog.dll% potencia_contratada:monofasico 6.9, 10.35, 13.80; trifasico13.80,20.7
+   % loads the library mqtt_prolog.dll
+   use_foreign_library(foreign(mqtt_prolog)),
+   assert(mqtt_library_loaded),
+   !;
+   true.
+
+create_monitoring_client:-
+    load_mqtt_library,
+    not(mqtt_monitoring_handler(_)),
+    mqtt_broker(Broker_URL),
+    mqtt_create_client(installation_monitoring, Broker_URL, Handler),
+    % the Handler is the C/C++ void *pointer inside the DLL.
+    assert(mqtt_monitoring_handler(Handler)),
+    mqtt_connect(Handler, _Result),
+    !;
+    true.
+
+installation_monitoring_on_connect_failure(_Handler):-
+   format('failure connection of ~w~n', [installation_monitoring]).
+
+installation_monitoring_on_connect_success(Handler):-
+   format('success connection of ~w~n', [installation_monitoring]),
+   mqtt_subscribe(Handler, 'shellies/shellyplug-16A631/relay/0/power', 1, _Result1),
+   mqtt_subscribe(Handler, 'shellies/shellyplug-16A632/relay/1/power', 2, _Result2).
+
+   %subscribe the other related topics
+
+installation_monitoring_on_message_arrived('shellies/shellyplug-16A631/relay/0/power', Message,_Handler):-
+   atom_number(Message,C),
+   alteraDispositivo('16A631',_,C).
+   %listInstDType('16A631', [Inst|_]),
+   %listConsumoDInst(Inst, LC),
+   %format('mqtt topic: ~w~n',['shellies/shellyplug-16A631/relay/0/power']),
+   %format('Inst DList: ~w~n~n',LC).
+
+installation_monitoring_on_message_arrived('shellies/shellyplug-16A632/relay/1/power', Message,_Handler):-
+   atom_number(Message,C),
+   alteraDispositivo('16A632',_,C).
+   %listInstDType('16A632', [Inst|_]),
+   %listConsumoDInst(Inst, LC),
+   %format('mqtt topic: ~w~n',['shellies/shellyplug-16A632/relay/0/power']),
+   %format('Inst DList: ~w~n~n',LC).
+
+
+
+% create the other topics on_message_arrived
+
+
+% potencia_contratada:monofasico 6.9, 10.35, 13.80; trifasico13.80,20.7
 tipo_pot('monofasico', 6.9).
 tipo_pot('monofasico', 10.35).
 tipo_pot('monofasico', 13.80).
@@ -186,6 +234,7 @@ addDtoListInst(Ref,Dname,[H|R]) :-
     addDtoListInst(Ref,Dname,R).
 
 alteraDispositivo(Ref,Dname, Pnum) :-
+    dispositivo(Ref,Dname,_),
     listInstDType(Ref, Linst),
     removeDispositivo(Ref),
     addDispositivo(Ref,Dname,Pnum),

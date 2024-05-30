@@ -8,6 +8,7 @@ port = 1883
 
 # Defining topics
 topic_1 = "shellies/shellyplug-16A631/relay/0/power"
+topic_2 = "shellies/shellyplug-16A632/relay/1/power"
 # add with other topics
 
 def connect_mqtt():
@@ -34,6 +35,12 @@ def publish(client):
         payload_1 = randomFloats(0.0, 45.0)
         print(f"Topic: {topic_1} Publishing: {payload_1}")
         client.publish(topic_1, payload_1)  # Publish the payload to the topic_1
+
+        time.sleep(5)  # Wait for 5 second before publishing the next float
+
+        payload_2 = randomFloats(0.0, 45.0)
+        print(f"Topic: {topic_2} Publishing: {payload_2}")
+        client.publish(topic_2, payload_2)  # Publish the payload to the topic_2
         # add the other topics publishing...
 
         time.sleep(5)  # Wait for 5 second before publishing the next float
