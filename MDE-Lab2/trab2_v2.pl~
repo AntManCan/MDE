@@ -365,8 +365,9 @@ mainexec(1):-instmenu(IOp), instexecute(IOp).
 mainexec(2):-devicemenu(IOp), deviceexecute(IOp).
 mainexec(3):-connectmenu(IOp), connectexecute(IOp).
 mainexec(4):-powermenu(IOp), powerexecute(IOp).
-%mainexec(5):-
-%mainexec(6):-
+mainexec(5):-listmenu(IOp), listexecute(IOp).
+mainexec(6):-miscmenu(IOp), miscexecute(IOp).
+
 
 % Installation Menu
 instmenu(IMOp):- write('====[ Installation Menu ]===='),nl,
@@ -386,13 +387,15 @@ instexecute(IOp):- instexec(IOp), nl, mainexec(1).
 
 instexec(1):-write('Installation Name?'),nl,
              read(InstName),
-             write('Power Type?'),nl,
+             write('Power Type: (1) One or (3) Three-phase' ),nl,
              read(PowerType),
              %Validate Power Type
-             write('Power?'),nl,
-             read(Power),
-             write('Power read.'),nl,
-             addInst(InstName, PowerType,Power),
+             (   (PowerType == 1) ->
+             (   write('Power: 6.9, 10.35 or 13.80'),nl,
+             write('Power: '),read(PowerM),addInst(InstName, 'monofasico',PowerM)));true,
+             (   (PowerType == 3) ->
+             (   write('Power: 13.80 or 20.7'),nl,
+             write('Power: '),read(Power),addInst(InstName, 'trifasico',Power))),
              write('Installation added successfully!').
 instexec(1):-w_error(1).
 
@@ -537,3 +540,95 @@ powerexecute(POp):- powerexec(POp), nl, powermenu(POp), powerexecute(POp).
 %powerexec(1):-
 %powerexec(2):-
 %powerexec(3):-
+
+
+% List Menu
+listmenu(LMOp):- write('====[ List Options ]===='),nl,
+               write('    1. List devices of an installation.'),nl,
+               write('    2. List power consumption of devices in installation.'),nl,
+               write('    3. List total power consumption of installation.'),nl,
+               write('    4. List installations with a specific device.'),nl,
+               write('    5. List installation with a highest power consumption.'),nl,
+               write('    6. Go back.'),nl,
+               write('============================='),nl, listreadoption(LMOp).
+
+listreadoption(LROp):- read(LROp), listvalid(LROp), nl.
+listreadoption(LROp):- nl, write('Invalid List Option!'), nl, listreadoption(LROp) .
+
+listvalid(VOp):- VOp >= 1, VOp=<6.
+
+listexecute(6).
+listexecute(IOp):- listexec(IOp), nl, mainexec(5).
+
+listexec(1):-write('Installation Name?'),nl,
+   read(InstName),
+   listDispositivoInst(InstName, L),
+   write('List operation successful!'),nl,
+   write('Device List: '),write(L),nl.
+listexec(1):-w_error(1).
+
+listexec(2):-write('Installation Name?'),nl,
+   read(InstName),
+   listConsumoDInst(InstName, LC),
+   write('List operation successful!'),nl,
+   write('Device List: '),write(LC),nl.
+listexec(2):-w_error(1).
+
+listexec(3).
+listexec(3):-w_error(1).
+
+listexec(4):-write('Device Ref?'),nl,
+   read(DRef),
+   listInstDType(DRef, LI) ,
+   write('List operation successful!'),nl,
+   write('Installation List: '),write(LI),nl.
+listexec(4):-w_error(1).
+
+listexec(5):-instMaiorConsumo(I),
+   write('List operation successful!'),nl,
+   write('Installation List: '),write(I),nl.
+listexec(5):-w_error(1).
+
+
+
+% Misc Menu
+miscmenu(MOp):- write('============[ Miscellaneous Options ]============='),nl,
+                write('1. Find a path across 2 installations.'),nl,
+                write('2. Find a path through a three-phase installation.'),nl,
+                write('3. Find a path with < 8% loss.'),nl,
+                write('4. Go back.'),nl,
+                write('=================================================='),nl, miscreadoption(MOp).
+
+miscreadoption(LROp):- read(LROp), miscvalid(LROp), nl.
+miscreadoption(LROp):- nl, write('Invalid Miscellaneous Option!'), nl, miscreadoption(LROp) .
+
+miscvalid(VOp):- VOp >= 1, VOp=<4.
+
+miscexecute(4).
+miscexecute(IOp):- miscexec(IOp), nl, mainexec(5).
+
+miscexec(1):- write('Start Installation: '),
+              read(X),
+              write('End Installation: '),
+              read(Y),
+              bipath(X, Y, L),
+              write('Path: '),write(L),nl.
+miscexec(1):- w_error(1).
+
+miscexec(2):- write('Start Installation: '),
+              read(X),
+              write('End Installation: '),
+              read(Y),
+              bipath_tri(X,Y,L,'trifasico'),
+              write('Path: '),write(L),nl.
+miscexec(2):- w_error(1).
+
+miscexec(3):- write('Start Installation: '),
+              read(X),
+              write('End Installation: '),
+              read(Y),
+              write('Loss rate(%): '),
+              read(Loss),
+              bipath_l(X,Y,L,Loss),
+              write('Path: '),write(L),nl.
+miscexec(3):- w_error(1).
