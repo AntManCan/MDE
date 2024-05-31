@@ -534,6 +534,6 @@ powervalid(POp):- POp >= 1, POp=<4.
 powerexecute(4).
 powerexecute(POp):- powerexec(POp), nl, powermenu(POp), powerexecute(POp).
 
-powerexec(1):-
-powerexec(2):-
-powerexec(3):-
+%powerexec(1):-
+%powerexec(2):-
+%powerexec(3):-

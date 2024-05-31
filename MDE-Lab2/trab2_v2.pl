@@ -365,7 +365,7 @@ mainexec(1):-instmenu(IOp), instexecute(IOp).
 mainexec(2):-devicemenu(IOp), deviceexecute(IOp).
 mainexec(3):-connectmenu(IOp), connectexecute(IOp).
 mainexec(4):-powermenu(IOp), powerexecute(IOp).
-%mainexec(5):-
+mainexec(5):-listmenu(IOp), listexecute(IOp).
 %mainexec(6):-
 
 % Installation Menu
@@ -537,3 +537,28 @@ powerexecute(POp):- powerexec(POp), nl, powermenu(POp), powerexecute(POp).
 %powerexec(1):-
 %powerexec(2):-
 %powerexec(3):-
+
+
+% List Menu
+listmenu(LMOp):- write('====[ List Options ]===='),nl,
+               write('    1. List installation devices.'),nl,
+               write('    2. List power consumption of devices in installation.'),nl,
+               write('    3. List total power consumption of installation.'),nl,
+               write('    4. List installations with a specific device.'),nl,
+               write('    5. List installation with a highest power consumption.'),nl,
+               write('    6. Go back.'),nl,
+               write('============================='),nl, listreadoption(LMOp).
+
+listreadoption(LROp):- read(LROp), listvalid(LROp), nl.
+listreadoption(LROp):- nl, write('Invalid List Option!'), nl, listreadoption(LROp) .
+
+listvalid(VOp):- VOp >= 1, VOp=<6.
+
+listexecute(6).
+listexecute(IOp):- listexec(IOp), nl, mainexec(5).
+
+%listexec(1):-
+%listexec(2):-
+%listexec(3):-
+%listexec(4):-
+%listexec(5):-
