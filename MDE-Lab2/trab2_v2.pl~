@@ -1,7 +1,7 @@
 
 %Defining the MQTT broker details
- mqtt_broker('tcp://localhost:1883').     % case working locally
-%mqtt_broker('tcp://192.168.250.201:1883'). % case working with lab1.3
+% mqtt_broker('tcp://localhost:1883').     % case working locally
+mqtt_broker('tcp://192.168.250.201:1883'). % case working with lab1.3
                                              % MQTT Broker
 
 :-dynamic mqtt_library_loaded/0.
@@ -200,14 +200,14 @@ alteraLigacao(X,Y,NewY,L,P,Ct,Cm,Ci) :-
 % addDispositivoInst(inst, dispositivo).
 addDispositivoInst(Ref,Inst, Dname) :-
     instalacao(Inst, _),
-    addDispositivo(Ref,Dname, 0),
+    dispositivo(Ref,Dname, Dnum),
     instLDispositivo(Inst, L),
     not(member(Ref, L)),
     append([Ref], L, L1),
     retract(instLDispositivo(Inst,_)),
     assert(instLDispositivo(Inst,L1)),
     inst_pot_total(Inst, S1),
-    S is S1,
+    S is S1+Dnum,
     retract(inst_pot_total(Inst, _)),
     assert(inst_pot_total(Inst, S)).
 
@@ -280,7 +280,7 @@ instMaiorConsumo(I) :-
 
 % RF10 - Obter itiner�rio el�trico entre duas instala��es.
 addcond(PP, arc(X,Y,L), TP) :-
-    not(member(arc(Y,X,_),PP)),
+    not(member(arc(Y,X,_),PP);member(arc(Y,X,_),PP)),
     append(PP,[arc(X,Y,L)],TP).
 
 step(X,Y,PP,TP,L) :-
@@ -301,15 +301,15 @@ listContainsTE(L,TE) :-
     true.
 
 addcond_tri(PP, arc(X:E1,Y:E2), TP) :-
-    not(member(arc(Y:_,X:_),PP)),
+    not(member(arc(Y:_,X:_),PP);member(arc(X:_,Y:_),PP)),
     append(PP,[arc(X:E1,Y:E2)],TP).
 
 step_tri(X,Y,PP,TP,TE) :-
     bid_l(X,Y,_),
     instalacao(X, tipo_pot(E1, _)),
-    instalacao(Y, tipo_pot(E2, _)),!,
+    instalacao(Y, tipo_pot(E2, _)),
     addcond_tri(PP,arc(X:E1,Y:E2),TP),
-    listContainsTE(TP,TE).
+    listContainsTE(TP,TE),!.
 step_tri(X,Y,PP,TP,TE) :-
     bid_l(X,Z,_),
     instalacao(X, tipo_pot(E1, _)),
@@ -392,17 +392,17 @@ instexec(1):-write('Installation Name?'),nl,
              %Validate Power Type
              (   (PowerType == 1) ->
              (   write('Power: 6.9, 10.35 or 13.80'),nl,
-             write('Power: '),read(PowerM),addInst(InstName, 'monofasico',PowerM)));true,
+             write('Power: '),read(PowerM),addInst(InstName, 'monofasico',PowerM));
              (   (PowerType == 3) ->
              (   write('Power: 13.80 or 20.7'),nl,
-             write('Power: '),read(Power),addInst(InstName, 'trifasico',Power))),
-             write('Installation added successfully!').
+             write('Power: '),read(Power),addInst(InstName, 'trifasico',Power)))),
+             write('Installation added successfully!'),nl.
 instexec(1):-w_error(1).
 
 instexec(2):-write('Installation Name?'),nl,
    read(InstName),
    removeInst(InstName),
-   write('Installation removed successfully!').
+   write('Installation removed successfully!'),nl.
 instexec(2):-w_error(1).
 
 instexec(3):-write('Installation Name?'),nl,
@@ -414,7 +414,7 @@ instexec(3):-write('Installation Name?'),nl,
    read(Power),
    write('Power read.'),nl,
    alteraInstP(InstName,Power,PowerType),
-   write('Installation modified successfully!').
+   write('Installation modified successfully!'),nl.
 instexec(3):-w_error(1).
 
 
@@ -440,22 +440,24 @@ deviceexec(1):-write('Device Name?'),nl,
              read(DRef),
              write('Installation Name?'),nl,
              read(IName),
+             addDispositivo(DRef,DName,0),
              addDispositivoInst(DRef, IName,DName),
-             write('Device added successfully!').
+             write('Device added successfully!'),nl.
 deviceexec(1):-w_error(1).
 
 deviceexec(2):-write('Device Ref?'),nl,
    read(DRef),
    removeDispositivo(DRef),
-   write('Device removed successfully!').
+   write('Device removed successfully!'),nl.
 deviceexec(2):-w_error(1).
 
 deviceexec(3):-write('Device Ref?'),nl,
    read(DRef),
    write('New Device Name? (write the same if no change)'),nl,
    read(NewDName),
-   alteraDispositivo(DRef,NewDName, 0),
-   write('Device modified successfully!').
+   dispositivo(DRef,_,Dnum),
+   alteraDispositivo(DRef,NewDName, Dnum),
+   write('Device modified successfully!'),nl.
 deviceexec(3):-w_error(1).
 
 % Connection Menu
@@ -489,7 +491,7 @@ connectexec(1):-write('Source Installation name?'),nl,
              write('Connection Power Loss?'),nl,
              read(P),
              addLigacao(InstX, InstY, Ctipo, Cmat, Ciso, L, P),
-             write('Connection added successfully!').
+             write('Connection added successfully!'),nl.
 connectexec(1):-w_error(1).
 
 connectexec(2):-write('Source Installation name?'),nl,
@@ -497,7 +499,7 @@ connectexec(2):-write('Source Installation name?'),nl,
    write('End Installation name?'),nl,
    read(InstY),
    removeLigacao(InstX, InstY),
-   write('Connection removed successfully!').
+   write('Connection removed successfully!'),nl.
 connectexec(2):-w_error(1).
 
 connectexec(3):-write('Source Installation name?'),nl,
@@ -517,30 +519,32 @@ connectexec(3):-write('Source Installation name?'),nl,
    write('New Connection Isolation? (write the same if no change)'),nl,
    read(Ci),
    alteraLigacao(InstX,InstY,NewY,L,P,Ct,Cm,Ci),
-   write('Connection modified successfully!').
+   write('Connection modified successfully!'),nl.
 connectexec(3):-w_error(1).
 
 
 % Power Menu
 powermenu(POp):-  write('====[ Power Menu ]===='),nl,
-                    write('    1. Add Power to a device.'),nl,
-                    write('    2. Remove a Power.'),nl,
-                    write('    3. Edit a Power.'),nl,
-                    write('    4. Go back.'),nl,
+                    write('    1. Edit a Device Power.'),nl,
+                    write('    2. Go back.'),nl,
                     write('========================'),nl, powerreadoption(POp).
 
 powerreadoption(POp):- read(POp), powervalid(POp), nl.
 powerreadoption(POp):- nl, write('Invalid Power Option!'), nl,  powerreadoption(Op).
 
-powervalid(POp):- POp >= 1, POp=<4.
+powervalid(POp):- POp >= 1, POp=<2.
 
-powerexecute(4).
-powerexecute(POp):- powerexec(POp), nl, powermenu(POp), powerexecute(POp).
+powerexecute(2).
+powerexecute(POp):- powerexec(POp), nl,mainmenu(4).
 
-%powerexec(1):-
-%powerexec(2):-
-%powerexec(3):-
-
+powerexec(1):-write('Device Ref?'),nl,
+   read(DRef),
+   write('New Device Power?'),nl,
+   read(DPower),
+   dispositivo(DRef,Dname,_),
+   alteraDispositivo(DRef,Dname, DPower),
+   write('Power modified successfully!'),nl.
+powerexec(1):-w_error(1).
 
 % List Menu
 listmenu(LMOp):- write('====[ List Options ]===='),nl,
@@ -574,7 +578,11 @@ listexec(2):-write('Installation Name?'),nl,
    write('Device List: '),write(LC),nl.
 listexec(2):-w_error(1).
 
-listexec(3).
+listexec(3):-write('Installation Name?'),nl,
+   read(InstName),
+   inst_pot_total(InstName,C),
+   write('List operation successful!'),nl,
+   write('Installation Total Power Consumption: '),write(C),nl.
 listexec(3):-w_error(1).
 
 listexec(4):-write('Device Ref?'),nl,
@@ -605,7 +613,7 @@ miscreadoption(LROp):- nl, write('Invalid Miscellaneous Option!'), nl, miscreado
 miscvalid(VOp):- VOp >= 1, VOp=<4.
 
 miscexecute(4).
-miscexecute(IOp):- miscexec(IOp), nl, mainexec(5).
+miscexecute(IOp):- miscexec(IOp), nl, mainexec(6).
 
 miscexec(1):- write('Start Installation: '),
               read(X),
