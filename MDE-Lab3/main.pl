@@ -15,7 +15,7 @@ frame_installation :-
     new_slot(installation,hiredPValue),
     new_slot(installation,sumPower,0),
     new_slot(installation,deviceList,[]),
-    new_slot(installation,connection,[]).
+    new_slot(installation,connection,[]). %Pode ser retirado
 
 frame_connection :-
     new_frame(connection),

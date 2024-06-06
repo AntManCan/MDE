@@ -1,9 +1,7 @@
 :- consult('golog2_2024.pl').
 
 def_isa :-
-    not(   is_a(_,_,_,_)) ->
-    new_relation(is_a, transitive, all, nil);
-    true.
+    new_relation(is_a, transitive, all, nil).
 
 init_frames :-
     delete_kb,
