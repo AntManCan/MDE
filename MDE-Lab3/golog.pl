@@ -1,4 +1,4 @@
-:- consult('golog2_2024.pl').
+:- ensure_loaded('golog2_2024.pl').
 create_vehicle:-
 
 new_frame(vehicle),
