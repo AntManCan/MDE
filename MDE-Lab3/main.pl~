@@ -7,7 +7,8 @@ init_frames :-
     delete_kb,
     def_isa,
     frame_installation,
-    frame_connection.
+    frame_connection,
+    frame_device.
 
 frame_installation :-
     new_frame(installation),
@@ -15,7 +16,14 @@ frame_installation :-
     new_slot(installation,hiredPValue),
     new_slot(installation,sumPower,0),
     new_slot(installation,deviceList,[]),
-    new_slot(installation,connection,[]).
+    new_demon(installation,sumPower,check_inst_sumP,if_write,after,side_effect).
+
+check_inst_sumP(F,sumPower,Sum,Sum) :-
+    get_value(F,hiredPValue,P),
+    (Sum > P) ->
+    (write('ALERT: ['),write(F),write('] exceeded hired power!'),nl,
+    write('Current Power Consumption: '),write(Sum),nl);
+    true.
 
 frame_connection :-
     new_frame(connection),
@@ -26,6 +34,25 @@ frame_connection :-
     new_slot(connection,cable_iso),
     new_slot(connection,length),
     new_slot(connection,loss_perc).
+
+frame_device :-
+    new_frame(device),
+    new_slot(device,ref),
+    new_slot(device,type),
+    new_slot(device,power,0),
+    new_slot(device,installed_in). % Name of installation device is installed in
+
+init_data :-
+    add_inst(instA,mono,6.9),
+    add_inst(instB,tri,13.80),
+    add_inst(instC,mono,13.80),
+    add_connection(instA,instB,rigido,cobre,pvc,10,2),
+    add_connection(instA,instC,rigido,cobre,pvc,30,1),
+    add_connection(instB,instC,rigido,cobre,pvc,15,4),
+    add_device(d16AM2,tv),
+    add_device(d45TY1,frigo),
+    add_device_to_inst(d16AM2,instA),
+    add_device_to_inst(d45TY1,instA).
 
 % RF1
 add_inst(Inst,PType,PValue) :-
@@ -45,3 +72,23 @@ add_connection(InstX,InstY,CType,CMat,CIso,L,Loss) :-
     new_value(Connect,cable_iso,CIso),
     new_value(Connect,length,L),
     new_value(Connect,loss_perc,Loss).
+
+add_device(DRef,DType) :-
+    new_frame(DRef),
+    new_slot(DRef,is_a,device),
+    new_value(DRef,type,DType).
+
+add_device_to_inst(DRef,Inst) :-
+    frame_exists(DRef),
+    frame_exists(Inst),
+    new_value(DRef,installed_in,Inst),
+    add_value(Inst,deviceList,DRef).
+
+alter_device_power(DRef,PNew) :-
+    get_value(DRef,installed_in,Inst),
+    frame_exists(Inst),
+    get_value(DRef,power,POld),
+    new_value(DRef,power,PNew),
+    get_value(Inst,sumPower,SumOld),
+    SumNew is SumOld+PNew-POld,
+    new_value(Inst,sumPower,SumNew).
