@@ -18,7 +18,35 @@ frame_installation :-
     new_slot(installation,sumPower,0),
     new_slot(installation,deviceList,[]),
     new_slot(installation,connectList,[]),
-    new_demon(installation,sumPower,check_inst_sumP,if_write,after,side_effect).
+    new_slot(installation,viewDevicesPower,list_device_power), % FR4
+    new_slot(installation,viewSumPower,view_installation_sumpower), % FR5
+    new_slot(installation,alterHiredPower,alter_installation_power), % FR6
+    new_demon(installation,sumPower,check_inst_sumP,if_write,after,side_effect). % FR7
+
+% FR5 - Visualizar, consumo total de uma instalação.
+view_installation_sumpower(F) :-
+    get_value(F,sumPower,P),
+    write('Current power consumption of ['),write(F),write(']: '),write(P),nl.
+
+% FR 6 - Alterar potência contratada de uma instalação
+alter_installation_power(F,Ptype,Pvalue) :-
+    new_value(F,hiredPType,Ptype),
+    new_value(F,hiredPValue,Pvalue).
+
+% FR4 - Visualizar dispositivos por instalação, e consumo de cada um
+% deles.
+list_device_power(F) :-
+    get_values(F,deviceList,LD),
+    make_list_dpower(LD,[],LDC),
+    write('Devices and power consumption of ['),write(F),write(']:'),
+    write(LDC),nl.
+make_list_dpower([H],LDCaux,LDC) :-
+    !,get_value(H,power,P),
+    append(LDCaux,[d(H:P)],LDC).
+make_list_dpower([H|R],LDCaux,LDC) :-
+    get_value(H,power,P),
+    append(LDCaux,[d(H:P)],Li),
+    make_list_dpower(R,Li,LDC).
 
 % FR7
 check_inst_sumP(F,sumPower,Sum,Sum) :-
@@ -49,9 +77,11 @@ init_data :-
     add_inst(instA,mono,6.9),
     add_inst(instB,tri,13.80),
     add_inst(instC,mono,13.80),
+    add_inst(instD,mono,13.80),
     add_connection(instA,instB,rigido,cobre,pvc,10,2),
     add_connection(instA,instC,rigido,cobre,pvc,30,1),
     add_connection(instB,instC,rigido,cobre,pvc,15,4),
+    add_connection(instB,instD,rigido,cobre,pvc,15,4),
     add_device(d16AM2,tv),
     add_device(d45TY1,frigo),
     add_device_to_inst(d16AM2,instA),
@@ -67,7 +97,7 @@ add_inst(Inst,PType,PValue) :-
 
 remove_inst(Inst) :-
     get_values(Inst,connectList,LR),
-    length(LR,1),
+    length(LR,1),!,
     get_value(Inst,connectList,InstY),
     remove_connection(Inst,InstY),
     delete_frame(Inst).

@@ -18,7 +18,35 @@ frame_installation :-
     new_slot(installation,sumPower,0),
     new_slot(installation,deviceList,[]),
     new_slot(installation,connectList,[]),
-    new_demon(installation,sumPower,check_inst_sumP,if_write,after,side_effect).
+    new_slot(installation,viewDevicesPower,list_device_power), % FR4
+    new_slot(installation,viewSumPower,view_installation_sumpower), % FR5
+    new_slot(installation,alterHiredPower,alter_installation_power), % FR6
+    new_demon(installation,sumPower,check_inst_sumP,if_write,after,side_effect). % FR7
+
+% FR5 - Visualizar, consumo total de uma instalação.
+view_installation_sumpower(F) :-
+    get_value(F,sumPower,P),
+    write('Current power consumption of ['),write(F),write(']: '),write(P),nl.
+
+% FR 6 - Alterar potência contratada de uma instalação
+alter_installation_power(F,Ptype,Pvalue) :-
+    new_value(F,hiredPType,Ptype),
+    new_value(F,hiredPValue,Pvalue).
+
+% FR4 - Visualizar dispositivos por instalação, e consumo de cada um
+% deles.
+list_device_power(F) :-
+    get_values(F,deviceList,LD),
+    make_list_dpower(LD,[],LDC),
+    write('Devices and power consumption of ['),write(F),write(']:'),
+    write(LDC),nl.
+make_list_dpower([H],LDCaux,LDC) :-
+    !,get_value(H,power,P),
+    append(LDCaux,[d(H:P)],LDC).
+make_list_dpower([H|R],LDCaux,LDC) :-
+    get_value(H,power,P),
+    append(LDCaux,[d(H:P)],Li),
+    make_list_dpower(R,Li,LDC).
 
 % FR7
 check_inst_sumP(F,sumPower,Sum,Sum) :-
@@ -43,15 +71,19 @@ frame_device :-
     new_slot(device,ref),
     new_slot(device,type),
     new_slot(device,power,0),
-    new_slot(device,installed_in). % Name of installation device is installed in
+    new_slot(device,installed_in), % Name of installation device is installed in
+    new_slot(device,installDevice,add_device_to_inst),
+    new_slot(device,updatePower,alter_device_power).
 
 init_data :-
     add_inst(instA,mono,6.9),
     add_inst(instB,tri,13.80),
     add_inst(instC,mono,13.80),
+    add_inst(instD,mono,13.80),
     add_connection(instA,instB,rigido,cobre,pvc,10,2),
     add_connection(instA,instC,rigido,cobre,pvc,30,1),
     add_connection(instB,instC,rigido,cobre,pvc,15,4),
+    add_connection(instB,instD,rigido,cobre,pvc,15,4),
     add_device(d16AM2,tv),
     add_device(d45TY1,frigo),
     add_device_to_inst(d16AM2,instA),
@@ -104,22 +136,21 @@ add_device(DRef,DType) :-
     new_slot(DRef,is_a,device),
     new_value(DRef,type,DType).
 
-add_device_to_inst(DRef,Inst) :-
-    frame_exists(DRef),
+add_device_to_inst(F,Inst) :-
     frame_exists(Inst),
-    new_value(DRef,installed_in,Inst),
-    add_value(Inst,deviceList,DRef).
+    new_value(F,installed_in,Inst),
+    add_value(Inst,deviceList,F).
 
 remove_device(DRef) :-
     get_value(DRef,installed_in,Inst),
     delete_value(Inst,deviceList,DRef),
     delete_frame(DRef).
 
-alter_device_power(DRef,PNew) :-
-    get_value(DRef,installed_in,Inst),
+alter_device_power(F,PNew) :-
+    get_value(F,installed_in,Inst),
     frame_exists(Inst),
-    get_value(DRef,power,POld),
-    new_value(DRef,power,PNew),
+    get_value(F,power,POld),
+    new_value(F,power,PNew),
     get_value(Inst,sumPower,SumOld),
     SumNew is SumOld+PNew-POld,
     new_value(Inst,sumPower,SumNew).
