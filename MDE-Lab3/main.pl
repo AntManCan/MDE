@@ -8,7 +8,8 @@ init_frames :-
     def_isa,
     frame_installation,
     frame_connection,
-    frame_device.
+    frame_device,
+    init_data.
 
 frame_installation :-
     new_frame(installation),
@@ -16,6 +17,7 @@ frame_installation :-
     new_slot(installation,hiredPValue),
     new_slot(installation,sumPower,0),
     new_slot(installation,deviceList,[]),
+    new_slot(installation,connectList,[]),
     new_demon(installation,sumPower,check_inst_sumP,if_write,after,side_effect).
 
 % FR7
@@ -56,12 +58,25 @@ init_data :-
     add_device_to_inst(d45TY1,instA).
 
 % RF2
+% ==== INST OPERATIONS  ====
 add_inst(Inst,PType,PValue) :-
     new_frame(Inst),
     new_slot(Inst,is_a,installation),
     new_value(Inst,hiredPType,PType),
     new_value(Inst,hiredPValue,PValue).
 
+remove_inst(Inst) :-
+    get_values(Inst,connectList,LR),
+    length(LR,1),!,
+    get_value(Inst,connectList,InstY),
+    remove_connection(Inst,InstY),
+    delete_frame(Inst).
+remove_inst(Inst) :-
+    get_value(Inst,connectList,InstY),
+    remove_connection(Inst,InstY),
+    remove_inst(Inst).
+
+% ==== CONNECTION OPERATIONS ====
 add_connection(InstX,InstY,CType,CMat,CIso,L,Loss) :-
     atom_concat(InstX,InstY,Connect),
     new_frame(Connect),
@@ -72,8 +87,18 @@ add_connection(InstX,InstY,CType,CMat,CIso,L,Loss) :-
     new_value(Connect,cable_material,CMat),
     new_value(Connect,cable_iso,CIso),
     new_value(Connect,length,L),
-    new_value(Connect,loss_perc,Loss).
+    new_value(Connect,loss_perc,Loss),
+    add_value(InstX,connectList,InstY),
+    add_value(InstY,connectList,InstX).
 
+remove_connection(InstX,InstY) :-
+    delete_value(InstX,connectList,InstY),
+    delete_value(InstY,connectList,InstX),
+    atom_concat(InstX,InstY,C),
+    (   (   frame_exists(C) -> delete_frame(C));
+    (   atom_concat(InstY,InstX,C2),delete_frame(C2))).
+
+% === DEVICE OPERATIONS ====
 add_device(DRef,DType) :-
     new_frame(DRef),
     new_slot(DRef,is_a,device),
@@ -84,6 +109,11 @@ add_device_to_inst(DRef,Inst) :-
     frame_exists(Inst),
     new_value(DRef,installed_in,Inst),
     add_value(Inst,deviceList,DRef).
+
+remove_device(DRef) :-
+    get_value(DRef,installed_in,Inst),
+    delete_value(Inst,deviceList,DRef),
+    delete_frame(DRef).
 
 alter_device_power(DRef,PNew) :-
     get_value(DRef,installed_in,Inst),
