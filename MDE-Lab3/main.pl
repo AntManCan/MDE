@@ -47,7 +47,7 @@ make_list_dpower([H|R],LDCaux,LDC) :-
     get_value(H,power,P),
     append(LDCaux,[d(H:P)],Li),
     make_list_dpower(R,Li,LDC).
-    
+
 % FR7
 check_inst_sumP(F,sumPower,Sum,Sum) :-
     get_value(F,hiredPValue,P),
@@ -64,11 +64,11 @@ frame_connection :-
     new_slot(connection,cable_material),
     new_slot(connection,cable_iso),
     new_slot(connection,length),
-    new_slot(connection,loss_perc).
+    new_slot(connection,loss_perc),
+    new_slot(connection,alter_connection,altera_connection).
 
 frame_device :-
     new_frame(device),
-    new_slot(device,ref),
     new_slot(device,type),
     new_slot(device,power,0),
     new_slot(device,installed_in), % Name of installation device is installed in
@@ -108,10 +108,6 @@ remove_inst(Inst) :-
     remove_connection(Inst,InstY),
     remove_inst(Inst).
 
-altera_inst(Inst, Ptype, Pvalue) :-
-    new_value(Inst,hiredPType,Ptype),
-    new_value(Inst,hiredPValue,Pvalue).
-
 % ==== CONNECTION OPERATIONS ====
 add_connection(InstX,InstY,CType,CMat,CIso,L,Loss) :-
     atom_concat(InstX,InstY,Connect),
@@ -134,38 +130,11 @@ remove_connection(InstX,InstY) :-
     (   (   frame_exists(C) -> delete_frame(C));
     (   atom_concat(InstY,InstX,C2),delete_frame(C2))).
 
-altera_connection(InstX,InstY,NewY,CType,CMat,CIso,L,Loss):-
-    atom_concat(InstX,InstY,Connect),
-    (   (   frame_exists(Connect) ->
-    delete_frame(Connect),
-    atom_concat(InstX,NewY,NewName),
-    new_frame(NewName),
-
-    new_slot(NewName,is_a,connection),
-    new_value(NewName,inst_end,NewY),
-    new_value(NewName,cable_type,CType),
-    new_value(NewName,cable_material,CMat),
-    new_value(NewName,cable_iso,CIso),
-    new_value(NewName,length,L),
-    new_value(NewName,loss_perc,Loss));
-    (   atom_concat(InstY,InstX,Connect2),
-    delete_frame(Connect2),
-    atom_concat(NewY,InstX,NewName2),
-    new_frame(NewName2),
-
-    new_slot(NewName2,is_a,connection),
-    new_value(NewName2,inst_end,NewY),
-    new_value(NewName2,cable_type,CType),
-    new_value(NewName2,cable_material,CMat),
-    new_value(NewName2,cable_iso,CIso),
-    new_value(NewName2,length,L),
-    new_value(NewName2,loss_perc,Loss)
-    )),
-    delete_value(InstX,connectList,InstY),
-    delete_value(InstY,connectList,InstX),
-
-    add_value(InstX,connectList,NewY),
-    add_value(NewY,connectList,InstX).
+altera_connection(F,NewX,NewY,CType,CMat,CIso,L,Loss) :-
+    get_value(F,inst_start,InstX),
+    get_value(F,inst_end,InstY),
+    remove_connection(InstX,InstY),
+    add_connection(NewX,NewY,CType,CMat,CIso,L,Loss).
 
 % === DEVICE OPERATIONS ====
 add_device(DRef,DType) :-
@@ -248,7 +217,7 @@ instexec(1):-write('Installation Name?'),nl,
              write('Power: '),read(PowerM),add_inst(InstName, 'mono',PowerM));true),
              (   (PowerType == 3) ->
              (   write('Power: 13.80 or 20.7'),nl,
-             write('Power: '),read(Power),add_inst(InstName, 'mono',Power))),
+             write('Power: '),read(Power),add_inst(InstName, 'tri',Power))),
              write('Installation added successfully!').
 instexec(1):-w_error(1).
 
@@ -265,10 +234,12 @@ instexec(3):-write('Installation Name?'),nl,
              %Validate Power Type
              (   (PowerType == 1) ->
              (   write('Power: 6.9, 10.35 or 13.80'),nl,
-             write('Power: '),read(PowerM),altera_inst(InstName, 'mono',PowerM));true),
+             write('Power: '),read(PowerM),nl,
+                 call_method(InstName,alterHiredPower,[mono,PowerM]));true),
              (   (PowerType == 3) ->
              (   write('Power: 13.80 or 20.7'),nl,
-             write('Power: '),read(Power),altera_inst(InstName, 'mono',Power))),
+             write('Power: '),read(Power),nl,
+                 call_method(InstName,alterHiredPower,[tri,Power]))),
              write('Installation modified successfully!').
 instexec(3):-w_error(1).
 
@@ -378,6 +349,11 @@ connectexec(3):-write('Source Installation name?'),nl,
    read(InstX),
    write('End Installation name?'),nl,
    read(InstY),
+   atom_concat(InstX,InstY,C1),
+   (   not(frame_exists(C1)) ->
+   (atom_concat(InstY,InstX,C2),frame_exists(C2));true),
+   write('New Start Installation name?'),nl,
+   read(NewX),
    write('New End Installation name?'),nl,
    read(NewY),
    write('New Connection Length?'),nl,
@@ -390,7 +366,10 @@ connectexec(3):-write('Source Installation name?'),nl,
    read(CMat),
    write('New Connection Isolation?'),nl,
    read(CIso),
-   altera_connection(InstX,InstY,NewY,CType,CMat,CIso,L,Loss),
+   (   frame_exists(C1) ->
+   call_method(C1,alter_connection,[NewX,NewY,CType,CMat,CIso,L,Loss]);
+   (   frame_exists(C2) ->
+   call_method(C2,alter_connection,[NewX,NewY,CType,CMat,CIso,L,Loss]))),
    write('Connection modified successfully!').
 connectexec(3):-w_error(1).
 
@@ -420,12 +399,12 @@ extraexecute(IOp):- extraexec(IOp), nl, mainexec(4).
 
 extraexec(1):-  write('Which installation would you like to show?'),nl,
                 read(Inst),
-                call_method(Inst,list_device_power).
+                call_method(Inst,viewDevicesPower,[]).
 extraexec(1):-w_error(1).
 
 extraexec(2):-  write('Which installation would you like to show?'),nl,
                 read(Inst),
-                call_method(Inst,view_installation_sumpower).
+                call_method(Inst,viewSumPower,[]).
 extraexec(2):-w_error(1).
 
 extraexec(3):-  write('Installation Name?'),nl,
