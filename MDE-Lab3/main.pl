@@ -413,7 +413,7 @@ extramenu(LMOp):- write('====[ Extra Options ]===='),nl,
 extrareadoption(LROp):- read(LROp), extravalid(LROp), nl.
 extrareadoption(LROp):- nl, write('Invalid Extra Option!'), nl, extrareadoption(LROp) .
 
-extravalid(VOp):- VOp >= 1, VOp=<5.
+extravalid(VOp):- VOp >= 1, VOp=<4.
 
 extraexecute(4).
 extraexecute(IOp):- extraexec(IOp), nl, mainexec(4).
